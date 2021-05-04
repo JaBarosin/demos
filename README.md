@@ -1,1 +1,1 @@
-# demos
+# demo-feeds
