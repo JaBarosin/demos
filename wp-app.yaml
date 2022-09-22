@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: wp
+type: Opaque
+data:
+  dbname: YXBwLWRi
+  dbuser: YXBwLXVzZXI=
+  dbpass: YXBwLXBhc3M=
+  dbrootpass: YXBwLXJvb3RwYXNz
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-pv
+  namespace: wp 
+  labels:
+    vol: mysql
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef: # the claimRef is here to provide a "connection" between this pv and the pvc.
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: app-pvc
+    namespace: wp 
+  hostPath:
+    path: /data/app/
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: app-pvc
+  namespace: wp 
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      vol: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: wp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.6
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - mountPath: "/var/lib/mysql"
+          name: mysql-pd
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbrootpass
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbuser
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbpass
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbname
+      volumes:
+        - name: mysql-pd
+          persistentVolumeClaim:
+            claimName: app-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: wp
+spec:
+  ports:
+    - port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+  namespace: wp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wordpress
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress:5.9-apache
+        ports:
+        - containerPort: 80
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql-service
+        - name: WORDPRESS_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbuser
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbpass
+        - name: WORDPRESS_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: dbname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-service
+  namespace: wp 
+  labels:
+    app: wordpress
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      nodePort: 30080
+  selector:
+    app: wordpress
