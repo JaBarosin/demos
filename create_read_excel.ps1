@@ -1,5 +1,5 @@
 # Logging
-$LogPath = "C:\temp\cst.log"
+$LogPath = "C:\temp\create_read_excel.log"
 "--- Script start: $(Get-Date) ---" | Out-File $LogPath
 
 $TaskName = "AAAReadExcel"
