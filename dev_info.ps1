@@ -27,6 +27,11 @@ Find unique PowerShell scripts being executed from the PowerShell operational lo
 Blog: http://clymb3r.wordpress.com/
 Github repo: https://github.com/clymb3r/PowerShell
 #>
+
+    param (
+        [string]$LogFilePath = "C:\temp\Find-PSScriptsInPSAppLog.log"
+    )
+
     $ReturnInfo = @{}
     $Logs = Get-WinEvent -LogName "Microsoft-Windows-PowerShell/Operational" -ErrorAction SilentlyContinue | Where {$_.Id -eq 4100}
 
@@ -73,5 +78,9 @@ Github repo: https://github.com/clymb3r/PowerShell
         }
     }
 
+
+    $ReturnInfo.Values | Out-File -FilePath $LogFilePath -Append
     return $ReturnInfo
 }
+
+Find-PSScriptsInPSAppLog -LogFilePath "C:\temp\findps_output.log"
