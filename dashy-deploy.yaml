@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashy-deployment
+  namespace: dashy
+spec:
+  replicas: 2  # Updated from 1 to 2
+  selector:
+    matchLabels:
+      app: dashy
+  template:
+    metadata:
+      labels:
+        app: dashy
+    spec:
+      containers:
+      - name: dashy
+        image: harbor.knox.rocks/cdo_k8s_demo/dashy:1.5
+        ports:
+        - containerPort: 80
+        env:
+        - name: NODE_ENV
+          value: "production"
